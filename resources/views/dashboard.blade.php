@@ -1,17 +1,55 @@
-<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Dashboard') }}
-        </h2>
-    </x-slot>
+@extends('layouts.app')
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900">
-                    {{ __("You're logged in!") }}
+@section('content')
+
+<div class="container py-4">
+
+    <h2 class="mb-4">Dashboard</h2>
+
+    <div class="row">
+
+        <div class="col-md-3 mb-4">
+            <div class="card text-white bg-primary shadow">
+                <div class="card-body">
+                    <h5>Total Beneficiaries</h5>
+                    <h2>{{ $total }}</h2>
                 </div>
             </div>
         </div>
+
+        <div class="col-md-3 mb-4">
+            <div class="card text-white bg-warning shadow">
+                <div class="card-body">
+                    <h5>Pending</h5>
+                    <h2>{{ $pending }}</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-4">
+            <div class="card text-white bg-success shadow">
+                <div class="card-body">
+                    <h5>Approved</h5>
+                    <h2>{{ $approved }}</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-4">
+            <div class="card text-white bg-danger shadow">
+                <div class="card-body">
+                    <h5>Rejected</h5>
+                    <h2>{{ $rejected }}</h2>
+                </div>
+            </div>
+        </div>
+
     </div>
-</x-app-layout>
+
+    <a href="{{ route('beneficiaries.index') }}" class="btn btn-primary">
+        Manage Beneficiaries
+    </a>
+
+</div>
+
+@endsection

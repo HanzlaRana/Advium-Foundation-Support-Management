@@ -33,18 +33,26 @@ return view('beneficiaries.index', compact('beneficiaries'));
     }
 
     /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        $request->validate([
+ * Store a newly created resource in storage.
+ */
+public function store(Request $request)
+{
+    $request->validate([
         'beneficiary_code' => 'required|unique:beneficiaries',
         'full_name' => 'required',
-        'cnic' => 'required',
+        'cnic' => 'required|unique:beneficiaries,cnic',
         'phone' => 'required',
         'address' => 'required',
         'status' => 'required',
+        'photo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
     ]);
+
+    $photoName = null;
+
+    if ($request->hasFile('photo')) {
+        $photoName = time() . '.' . $request->photo->extension();
+        $request->photo->storeAs('beneficiaries', $photoName, 'public');
+    }
 
     Beneficiary::create([
         'beneficiary_code' => $request->beneficiary_code,
@@ -53,20 +61,23 @@ return view('beneficiaries.index', compact('beneficiaries'));
         'phone' => $request->phone,
         'address' => $request->address,
         'status' => $request->status,
+        'photo' => $photoName,
     ]);
 
     return redirect()
-    ->route('beneficiaries.index')
-    ->with('success', 'Beneficiary added successfully.');
-    }
+        ->route('beneficiaries.index')
+        ->with('success', 'Beneficiary added successfully.');
+}
 
     /**
      * Display the specified resource.
      */
     public function show(string $id)
-    {
-        //
-    }
+{
+    $beneficiary = Beneficiary::findOrFail($id);
+
+    return view('beneficiaries.show', compact('beneficiary'));
+}
 
     /**
      * Show the form for editing the specified resource.
@@ -121,4 +132,19 @@ return view('beneficiaries.index', compact('beneficiaries'));
     ->route('beneficiaries.index')
     ->with('success', 'Beneficiary deleted successfully.');
     }
+    
+    public function changeStatus(Beneficiary $beneficiary, $status)
+{
+    if (!in_array($status, ['Pending', 'Approved', 'Rejected'])) {
+        abort(404);
+    }
+
+    $beneficiary->update([
+        'status' => $status,
+    ]);
+
+    return redirect()
+        ->route('beneficiaries.index')
+        ->with('success', 'Status updated successfully.');
+}
 }
