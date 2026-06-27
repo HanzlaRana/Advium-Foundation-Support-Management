@@ -1,8 +1,8 @@
 <?php
-
 namespace App\Http\Controllers;
 use App\Models\Beneficiary;
 use Illuminate\Http\Request;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class BeneficiaryController extends Controller
 {
@@ -40,7 +40,7 @@ public function store(Request $request)
     $request->validate([
         'beneficiary_code' => 'required|unique:beneficiaries',
         'full_name' => 'required',
-        'cnic' => 'required|unique:beneficiaries,cnic',
+        'cnic' => 'required|unique:beneficiaries,cnic|regex:/^\d{5}-\d{7}-\d{1}$/',
         'phone' => 'required',
         'address' => 'required',
         'status' => 'required',
@@ -93,45 +93,66 @@ public function store(Request $request)
      * Update the specified resource in storage.
      */
     public function update(Request $request, string $id)
-    {
-        $request->validate([
+{
+    $request->validate([
         'beneficiary_code' => 'required',
-        'full_name' => 'required',
-        'cnic' => 'required',
-        'phone' => 'required',
-        'address' => 'required',
-        'status' => 'required',
+        'full_name'        => 'required',
+        'cnic' => 'required|unique:beneficiaries,cnic,' . $id . '|regex:/^\d{5}-\d{7}-\d{1}$/',
+        'phone'            => 'required',
+        'address'          => 'required',
+        'status'           => 'required',
+        'photo'            => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
     ]);
 
     $beneficiary = Beneficiary::findOrFail($id);
 
+    $photoName = $beneficiary->photo; // keep old photo by default
+
+    if ($request->hasFile('photo')) {
+
+        // Delete old photo from storage if it exists
+        if ($beneficiary->photo) {
+            \Storage::disk('public')->delete('beneficiaries/' . $beneficiary->photo);
+        }
+
+        // Store new photo
+        $photoName = time() . '.' . $request->photo->extension();
+        $request->photo->storeAs('beneficiaries', $photoName, 'public');
+    }
+
     $beneficiary->update([
         'beneficiary_code' => $request->beneficiary_code,
-        'full_name' => $request->full_name,
-        'cnic' => $request->cnic,
-        'phone' => $request->phone,
-        'address' => $request->address,
-        'status' => $request->status,
+        'full_name'        => $request->full_name,
+        'cnic'             => $request->cnic,
+        'phone'            => $request->phone,
+        'address'          => $request->address,
+        'status'           => $request->status,
+        'photo'            => $photoName,
     ]);
 
     return redirect()
-    ->route('beneficiaries.index')
-    ->with('success', 'Beneficiary updated successfully.');
-    }
+        ->route('beneficiaries.index')
+        ->with('success', 'Beneficiary updated successfully.');
+}
 
     /**
      * Remove the specified resource from storage.
      */
     public function destroy(string $id)
-    {
-        $beneficiary = Beneficiary::findOrFail($id);
+{
+    $beneficiary = Beneficiary::findOrFail($id);
+
+    // Delete photo from storage before deleting record
+    if ($beneficiary->photo) {
+        \Storage::disk('public')->delete('beneficiaries/' . $beneficiary->photo);
+    }
 
     $beneficiary->delete();
 
     return redirect()
-    ->route('beneficiaries.index')
-    ->with('success', 'Beneficiary deleted successfully.');
-    }
+        ->route('beneficiaries.index')
+        ->with('success', 'Beneficiary deleted successfully.');
+}
     
     public function changeStatus(Beneficiary $beneficiary, $status)
 {
@@ -147,4 +168,51 @@ public function store(Request $request)
         ->route('beneficiaries.index')
         ->with('success', 'Status updated successfully.');
 }
+
+                  public function exportPdf()
+    {
+        $beneficiaries = Beneficiary::all();
+
+        $pdf = Pdf::loadView('beneficiaries.pdf', compact('beneficiaries'))
+                  ->setPaper('a4', 'landscape');
+
+        return $pdf->download('beneficiaries-' . date('Y-m-d') . '.pdf');
+    }
+public function exportExcel()
+{
+    $beneficiaries = Beneficiary::all();
+
+    $filename = 'beneficiaries-' . date('Y-m-d') . '.csv';
+
+    $headers = [
+        'Content-Type'        => 'text/csv',
+        'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+    ];
+
+    $callback = function () use ($beneficiaries) {
+        $file = fopen('php://output', 'w');
+
+        // Header row
+        fputcsv($file, ['#', 'Code', 'Full Name', 'CNIC', 'Phone', 'Address', 'Status', 'Registered']);
+
+        // Data rows
+        foreach ($beneficiaries as $index => $beneficiary) {
+            fputcsv($file, [
+                $index + 1,
+                $beneficiary->beneficiary_code,
+                $beneficiary->full_name,
+                $beneficiary->cnic,
+                $beneficiary->phone,
+                $beneficiary->address,
+                $beneficiary->status,
+                $beneficiary->created_at->format('d M Y'),
+            ]);
+        }
+
+        fclose($file);
+    };
+
+    return response()->stream($callback, 200, $headers);
+}
+
 }
