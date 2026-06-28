@@ -18,6 +18,13 @@ return Application::configure(basePath: dirname(__DIR__))
             'volunteer'  => \App\Http\Middleware\VolunteerMiddleware::class,
             'superadmin' => \App\Http\Middleware\SuperAdminMiddleware::class,
         ]);
+
+        $middleware->api(prepend: [
+            \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+        ]);
+
+        // CORS headers for React frontend
+        $middleware->append(\Illuminate\Http\Middleware\HandleCors::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
