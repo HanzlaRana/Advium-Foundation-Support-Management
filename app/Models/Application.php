@@ -52,4 +52,10 @@ class Application extends Model
     {
         return $this->hasMany(ApprovalLog::class);
     }
+   
+    public function distribution()
+{
+    return $this->hasOne(Distribution::class);
+}
+
 }

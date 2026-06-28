@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\ApplicantController;
 use App\Http\Controllers\Api\SurveyController;
 use App\Http\Controllers\Api\ApprovalController;
+use App\Http\Controllers\Api\DistributionController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
@@ -59,6 +60,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/applications/{applicationId}/reject', [ApprovalController::class, 'reject']);
     Route::post('/applications/{applicationId}/hold', [ApprovalController::class, 'hold']);
     Route::post('/applications/{applicationId}/assign', [ApprovalController::class, 'assign']);
+
+    // Distribution
+    Route::get('/distributions', [DistributionController::class, 'index']);
+    Route::post('/applications/{applicationId}/distribution', [DistributionController::class, 'store']);
+    Route::get('/applications/{applicationId}/distribution', [DistributionController::class, 'show']);
+    Route::patch('/applications/{applicationId}/distribution/complete', [DistributionController::class, 'complete']);
 
     // User management
     Route::get('/users', [UserController::class, 'index']);
