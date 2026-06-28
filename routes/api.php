@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ProgramController;
+use App\Http\Controllers\Api\ApplicationController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
@@ -10,6 +11,10 @@ Route::post('/staff/login', [AuthController::class, 'login']);
 // Public program routes
 Route::get('/programs', [ProgramController::class, 'index']);
 Route::get('/programs/{slug}', [ProgramController::class, 'show']);
+
+// Public application routes
+Route::post('/applications', [ApplicationController::class, 'store']);
+Route::get('/applications/track', [ApplicationController::class, 'track']);
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
@@ -21,5 +26,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Program management (admin only)
     Route::post('/programs', [ProgramController::class, 'store']);
     Route::put('/programs/{program}', [ProgramController::class, 'update']);
+
+    // Application management (admin only)
+    Route::get('/applications', [ApplicationController::class, 'index']);
+    Route::get('/applications/{id}', [ApplicationController::class, 'show']);
+    Route::patch('/applications/{id}/status', [ApplicationController::class, 'updateStatus']);
 
 });
