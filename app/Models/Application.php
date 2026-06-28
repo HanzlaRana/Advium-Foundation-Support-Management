@@ -42,4 +42,9 @@ class Application extends Model
     {
         return $this->belongsTo(User::class, 'assigned_to');
     }
+
+    public function survey()
+    {
+        return $this->hasOne(Survey::class);
+    }
 }
