@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\DistributionController;
 use App\Http\Controllers\Api\LoanController;
 use App\Http\Controllers\Api\InventoryController;
 use App\Http\Controllers\Api\AuditLogController;
+use App\Http\Controllers\Api\NotificationController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
@@ -87,9 +88,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/inventory/{id}/stock-in', [InventoryController::class, 'stockIn']);
     Route::patch('/inventory/{id}/stock-out', [InventoryController::class, 'stockOut']);
 
-    // Audit logs (superadmin only)
+    // Audit logs
     Route::get('/audit-logs', [AuditLogController::class, 'index']);
     Route::get('/audit-logs/{id}', [AuditLogController::class, 'show']);
+
+    // Notifications
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+    Route::patch('/notifications/{id}/read', [NotificationController::class, 'markRead']);
+    Route::patch('/notifications/mark-all-read', [NotificationController::class, 'markAllRead']);
+    Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
 
     // User management
     Route::get('/users', [UserController::class, 'index']);
