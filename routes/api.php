@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\ApprovalController;
 use App\Http\Controllers\Api\DistributionController;
 use App\Http\Controllers\Api\LoanController;
 use App\Http\Controllers\Api\InventoryController;
+use App\Http\Controllers\Api\AuditLogController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
@@ -85,6 +86,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/inventory/{id}', [InventoryController::class, 'update']);
     Route::patch('/inventory/{id}/stock-in', [InventoryController::class, 'stockIn']);
     Route::patch('/inventory/{id}/stock-out', [InventoryController::class, 'stockOut']);
+
+    // Audit logs (superadmin only)
+    Route::get('/audit-logs', [AuditLogController::class, 'index']);
+    Route::get('/audit-logs/{id}', [AuditLogController::class, 'show']);
 
     // User management
     Route::get('/users', [UserController::class, 'index']);

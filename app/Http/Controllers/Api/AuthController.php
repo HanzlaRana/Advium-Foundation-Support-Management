@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -23,9 +24,17 @@ class AuthController extends Controller
             ]);
         }
 
-        $user = User::where('email', $request->email)->firstOrFail();
-
+        $user  = User::where('email', $request->email)->firstOrFail();
         $token = $user->createToken('auth_token')->plainTextToken;
+
+        // Log login
+        AuditLog::create([
+            'user_id'     => $user->id,
+            'action'      => 'login',
+            'description' => $user->name . ' logged in.',
+            'ip_address'  => $request->ip(),
+            'user_agent'  => $request->userAgent(),
+        ]);
 
         return response()->json([
             'success' => true,
@@ -41,6 +50,15 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
+        // Log logout
+        AuditLog::create([
+            'user_id'     => auth()->id(),
+            'action'      => 'logout',
+            'description' => auth()->user()->name . ' logged out.',
+            'ip_address'  => $request->ip(),
+            'user_agent'  => $request->userAgent(),
+        ]);
+
         $request->user()->currentAccessToken()->delete();
 
         return response()->json([
