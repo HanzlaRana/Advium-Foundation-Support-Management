@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ProgramController;
 use App\Http\Controllers\Api\ApplicationController;
+use App\Http\Controllers\Api\DashboardController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
@@ -22,6 +23,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // Auth
     Route::post('/staff/logout', [AuthController::class, 'logout']);
     Route::get('/staff/me', [AuthController::class, 'me']);
+
+    // Dashboard
+    Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
 
     // Program management (admin only)
     Route::post('/programs', [ProgramController::class, 'store']);
