@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\ApplicantController;
 use App\Http\Controllers\Api\SurveyController;
 use App\Http\Controllers\Api\ApprovalController;
 use App\Http\Controllers\Api\DistributionController;
+use App\Http\Controllers\Api\LoanController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
@@ -66,6 +67,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/applications/{applicationId}/distribution', [DistributionController::class, 'store']);
     Route::get('/applications/{applicationId}/distribution', [DistributionController::class, 'show']);
     Route::patch('/applications/{applicationId}/distribution/complete', [DistributionController::class, 'complete']);
+
+    // Loan management
+    Route::get('/loans', [LoanController::class, 'index']);
+    Route::get('/loans/overdue', [LoanController::class, 'overdue']);
+    Route::post('/applications/{applicationId}/loan', [LoanController::class, 'store']);
+    Route::get('/loans/{id}', [LoanController::class, 'show']);
+    Route::post('/loans/{loanId}/installments/{installmentId}/pay', [LoanController::class, 'recordPayment']);
 
     // User management
     Route::get('/users', [UserController::class, 'index']);
