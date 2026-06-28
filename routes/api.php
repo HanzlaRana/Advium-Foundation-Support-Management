@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\ApplicantController;
 use App\Http\Controllers\Api\SurveyController;
+use App\Http\Controllers\Api\ApprovalController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
@@ -51,6 +52,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/applications/{applicationId}/survey', [SurveyController::class, 'store']);
     Route::get('/applications/{applicationId}/survey', [SurveyController::class, 'show']);
     Route::put('/applications/{applicationId}/survey', [SurveyController::class, 'update']);
+
+    // Approval workflow
+    Route::get('/applications/{applicationId}/logs', [ApprovalController::class, 'logs']);
+    Route::post('/applications/{applicationId}/approve', [ApprovalController::class, 'approve']);
+    Route::post('/applications/{applicationId}/reject', [ApprovalController::class, 'reject']);
+    Route::post('/applications/{applicationId}/hold', [ApprovalController::class, 'hold']);
+    Route::post('/applications/{applicationId}/assign', [ApprovalController::class, 'assign']);
 
     // User management
     Route::get('/users', [UserController::class, 'index']);

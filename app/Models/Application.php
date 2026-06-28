@@ -47,4 +47,9 @@ class Application extends Model
     {
         return $this->hasOne(Survey::class);
     }
+
+    public function approvalLogs()
+    {
+        return $this->hasMany(ApprovalLog::class);
+    }
 }
