@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\LoanController;
 use App\Http\Controllers\Api\InventoryController;
 use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\ReportController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
@@ -98,6 +99,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/notifications/{id}/read', [NotificationController::class, 'markRead']);
     Route::patch('/notifications/mark-all-read', [NotificationController::class, 'markAllRead']);
     Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
+
+    // Reports
+    Route::get('/reports/applications', [ReportController::class, 'applications']);
+    Route::get('/reports/loan-recovery', [ReportController::class, 'loanRecovery']);
+    Route::get('/reports/distributions', [ReportController::class, 'distributions']);
+    Route::get('/reports/inventory', [ReportController::class, 'inventory']);
 
     // User management
     Route::get('/users', [UserController::class, 'index']);
