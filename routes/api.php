@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\ProgramController;
 use App\Http\Controllers\Api\ApplicationController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\ApplicantController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
@@ -28,7 +29,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Dashboard
     Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
 
-    // Program management (admin only)
+    // Program management
     Route::post('/programs', [ProgramController::class, 'store']);
     Route::put('/programs/{program}', [ProgramController::class, 'update']);
 
@@ -37,7 +38,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/applications/{id}', [ApplicationController::class, 'show']);
     Route::patch('/applications/{id}/status', [ApplicationController::class, 'updateStatus']);
 
-    // User management (superadmin only)
+    // Applicant management
+    Route::get('/applicants', [ApplicantController::class, 'index']);
+    Route::get('/applicants/{id}', [ApplicantController::class, 'show']);
+    Route::put('/applicants/{id}', [ApplicantController::class, 'update']);
+    Route::patch('/applicants/{id}/blacklist', [ApplicantController::class, 'blacklist']);
+    Route::patch('/applicants/{id}/unblacklist', [ApplicantController::class, 'unblacklist']);
+
+    // User management
     Route::get('/users', [UserController::class, 'index']);
     Route::post('/users', [UserController::class, 'store']);
     Route::get('/users/{id}', [UserController::class, 'show']);
