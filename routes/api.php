@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\SurveyController;
 use App\Http\Controllers\Api\ApprovalController;
 use App\Http\Controllers\Api\DistributionController;
 use App\Http\Controllers\Api\LoanController;
+use App\Http\Controllers\Api\InventoryController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
@@ -74,6 +75,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/applications/{applicationId}/loan', [LoanController::class, 'store']);
     Route::get('/loans/{id}', [LoanController::class, 'show']);
     Route::post('/loans/{loanId}/installments/{installmentId}/pay', [LoanController::class, 'recordPayment']);
+
+    // Inventory
+    Route::get('/inventory', [InventoryController::class, 'index']);
+    Route::post('/inventory', [InventoryController::class, 'store']);
+    Route::get('/inventory/low-stock', [InventoryController::class, 'lowStock']);
+    Route::get('/inventory/expiring-soon', [InventoryController::class, 'expiringSoon']);
+    Route::get('/inventory/{id}', [InventoryController::class, 'show']);
+    Route::put('/inventory/{id}', [InventoryController::class, 'update']);
+    Route::patch('/inventory/{id}/stock-in', [InventoryController::class, 'stockIn']);
+    Route::patch('/inventory/{id}/stock-out', [InventoryController::class, 'stockOut']);
 
     // User management
     Route::get('/users', [UserController::class, 'index']);
