@@ -22,6 +22,8 @@ use App\Http\Controllers\Api\ExpenseController;
 Route::post('/staff/login', [AuthController::class, 'login']);
 Route::get('/programs', [ProgramController::class, 'index']);
 Route::get('/programs/{slug}', [ProgramController::class, 'show']);
+Route::post('/programs', [ProgramController::class, 'store']);
+Route::put('/programs/{slug}', [ProgramController::class, 'update']);
 Route::post('/applications', [ApplicationController::class, 'store']);
 Route::get('/applications/track', [ApplicationController::class, 'track']);
 
