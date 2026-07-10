@@ -22,7 +22,7 @@ class Application extends Model
     ];
 
     protected $casts = [
-        'documents'      => 'array',
+        'documents' => 'json',
         'submitted_at'   => 'datetime',
         'approved_at'    => 'datetime',
         'distributed_at' => 'datetime',
