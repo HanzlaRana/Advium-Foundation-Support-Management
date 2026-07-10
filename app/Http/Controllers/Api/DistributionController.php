@@ -79,34 +79,29 @@ class DistributionController extends Controller
     }
 
     // Complete distribution
-    public function complete(Request $request, $applicationId)
+    public function complete(Request $request, $id)
     {
-        $request->validate([
-            'actual_date'     => 'required|date',
-            'recipient_name'  => 'required|string',
-            'recipient_cnic'  => 'required|string',
-            'notes'           => 'nullable|string',
-        ]);
+        // Works with either the distribution ID or the application ID
+        $distribution = Distribution::with('application')->find($id)
+            ?? Distribution::where('application_id', $id)->with('application')->firstOrFail();
 
-        $application = Application::with('distribution')->findOrFail($applicationId);
-
-        if (!$application->distribution) {
+        if ($distribution->status === 'completed') {
             return response()->json([
                 'success' => false,
-                'message' => 'No distribution found for this application.',
-            ], 404);
+                'message' => 'This distribution has already been completed.',
+            ], 409);
         }
 
-        $application->distribution->update([
+        $distribution->update([
             'status'         => 'completed',
-            'actual_date'    => $request->actual_date,
-            'recipient_name' => $request->recipient_name,
-            'recipient_cnic' => $request->recipient_cnic,
-            'notes'          => $request->notes,
+            'actual_date'    => $request->actual_date ?? now()->toDateString(),
+            'recipient_name' => $request->recipient_name ?? $distribution->recipient_name,
+            'recipient_cnic' => $request->recipient_cnic ?? $distribution->recipient_cnic,
+            'notes'          => $request->notes ?? $distribution->notes,
         ]);
 
         // Update application status
-        $application->update([
+        $distribution->application->update([
             'status'         => 'distributed',
             'distributed_at' => now(),
         ]);
