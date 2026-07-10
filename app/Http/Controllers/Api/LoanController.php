@@ -139,17 +139,30 @@ class LoanController extends Controller
 
     // Record installment payment
     // Route: POST /loans/{id}/payment — {id} is the LOAN id.
-    // Pays a specific installment if installment_id is sent in the body,
-    // otherwise pays the next unpaid installment automatically.
+    // Accepts whatever the frontend sends; fills sensible defaults for the rest.
     public function recordPayment(Request $request, $loanId)
     {
         $request->validate([
-            'paid_amount'    => 'required|numeric|min:1',
-            'payment_method' => 'required|string',
-            'paid_date'      => 'required|date',
+            'paid_amount'    => 'nullable|numeric|min:1',
+            'amount'         => 'nullable|numeric|min:1',
+            'payment_method' => 'nullable|string',
+            'paid_date'      => 'nullable|date',
             'installment_id' => 'nullable|integer',
             'notes'          => 'nullable|string',
         ]);
+
+        // Accept the amount under either key the frontend may use
+        $paidAmount = $request->paid_amount ?? $request->amount;
+
+        if (!$paidAmount || $paidAmount <= 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Payment amount is required.',
+            ], 422);
+        }
+
+        $paymentMethod = $request->payment_method ?? 'cash';
+        $paidDate      = $request->paid_date ?? now()->toDateString();
 
         $loan = Loan::findOrFail($loanId);
 
@@ -157,6 +170,7 @@ class LoanController extends Controller
             $installment = Installment::where('loan_id', $loanId)
                                       ->findOrFail($request->installment_id);
         } else {
+            // Pay the next unpaid installment automatically
             $installment = Installment::where('loan_id', $loanId)
                                       ->whereIn('status', ['pending', 'partial'])
                                       ->orderBy('installment_number')
@@ -178,12 +192,12 @@ class LoanController extends Controller
         }
 
         $receiptNumber = 'RCP-' . strtoupper(Str::random(8));
-        $fullyPaid     = $request->paid_amount >= $installment->amount;
+        $fullyPaid     = $paidAmount >= $installment->amount;
 
         $installment->update([
-            'paid_amount'    => $request->paid_amount,
-            'paid_date'      => $request->paid_date,
-            'payment_method' => $request->payment_method,
+            'paid_amount'    => $paidAmount,
+            'paid_date'      => $paidDate,
+            'payment_method' => $paymentMethod,
             'receipt_number' => $receiptNumber,
             'collected_by'   => auth()->id(),
             'notes'          => $request->notes,
@@ -191,8 +205,8 @@ class LoanController extends Controller
         ]);
 
         // Update loan totals — only count fully paid installments
-        $totalPaid        = $loan->total_paid + $request->paid_amount;
-        $remainingBalance = $loan->remaining_balance - $request->paid_amount;
+        $totalPaid        = $loan->total_paid + $paidAmount;
+        $remainingBalance = $loan->remaining_balance - $paidAmount;
 
         $loan->update([
             'total_paid'         => $totalPaid,
