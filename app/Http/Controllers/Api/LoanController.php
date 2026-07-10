@@ -29,6 +29,22 @@ class LoanController extends Controller
 
         $application = Application::findOrFail($applicationId);
 
+        // Only approved applications can receive a loan
+        if ($application->status !== 'approved') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only approved applications can be issued a loan.',
+            ], 422);
+        }
+
+        // Prevent duplicate loans for the same application
+        if (Loan::where('application_id', $applicationId)->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'A loan already exists for this application.',
+            ], 409);
+        }
+
         // Calculate loan details
         $downPayment        = $request->down_payment ?? 0;
         $loanAmount         = $request->total_amount - $downPayment;
@@ -89,11 +105,13 @@ class LoanController extends Controller
         }
 
         if ($request->search) {
-            $query->where('loan_number', 'like', '%' . $request->search . '%')
-                  ->orWhereHas('applicant', function ($q) use ($request) {
-                      $q->where('full_name', 'like', '%' . $request->search . '%')
-                        ->orWhere('cnic', 'like', '%' . $request->search . '%');
+            $query->where(function ($q) use ($request) {
+                $q->where('loan_number', 'like', '%' . $request->search . '%')
+                  ->orWhereHas('applicant', function ($sub) use ($request) {
+                      $sub->where('full_name', 'like', '%' . $request->search . '%')
+                          ->orWhere('cnic', 'like', '%' . $request->search . '%');
                   });
+            });
         }
 
         $loans = $query->latest()->paginate(15);
@@ -120,20 +138,47 @@ class LoanController extends Controller
     }
 
     // Record installment payment
-    public function recordPayment(Request $request, $loanId, $installmentId)
+    // Route: POST /loans/{id}/payment — {id} is the LOAN id.
+    // Pays a specific installment if installment_id is sent in the body,
+    // otherwise pays the next unpaid installment automatically.
+    public function recordPayment(Request $request, $loanId)
     {
         $request->validate([
             'paid_amount'    => 'required|numeric|min:1',
             'payment_method' => 'required|string',
             'paid_date'      => 'required|date',
+            'installment_id' => 'nullable|integer',
             'notes'          => 'nullable|string',
         ]);
 
-        $loan        = Loan::findOrFail($loanId);
-        $installment = Installment::where('loan_id', $loanId)
-                                  ->findOrFail($installmentId);
+        $loan = Loan::findOrFail($loanId);
+
+        if ($request->installment_id) {
+            $installment = Installment::where('loan_id', $loanId)
+                                      ->findOrFail($request->installment_id);
+        } else {
+            $installment = Installment::where('loan_id', $loanId)
+                                      ->whereIn('status', ['pending', 'partial'])
+                                      ->orderBy('installment_number')
+                                      ->first();
+        }
+
+        if (!$installment) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No unpaid installments remaining for this loan.',
+            ], 422);
+        }
+
+        if ($installment->status === 'paid') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This installment has already been paid.',
+            ], 409);
+        }
 
         $receiptNumber = 'RCP-' . strtoupper(Str::random(8));
+        $fullyPaid     = $request->paid_amount >= $installment->amount;
 
         $installment->update([
             'paid_amount'    => $request->paid_amount,
@@ -142,20 +187,17 @@ class LoanController extends Controller
             'receipt_number' => $receiptNumber,
             'collected_by'   => auth()->id(),
             'notes'          => $request->notes,
-            'status'         => $request->paid_amount >= $installment->amount
-                                ? 'paid'
-                                : 'partial',
+            'status'         => $fullyPaid ? 'paid' : 'partial',
         ]);
 
-        // Update loan totals
+        // Update loan totals — only count fully paid installments
         $totalPaid        = $loan->total_paid + $request->paid_amount;
         $remainingBalance = $loan->remaining_balance - $request->paid_amount;
-        $paidInstallments = $loan->paid_installments + 1;
 
         $loan->update([
             'total_paid'         => $totalPaid,
             'remaining_balance'  => max(0, $remainingBalance),
-            'paid_installments'  => $paidInstallments,
+            'paid_installments'  => $loan->paid_installments + ($fullyPaid ? 1 : 0),
             'status'             => $remainingBalance <= 0 ? 'completed' : 'active',
         ]);
 
@@ -171,7 +213,7 @@ class LoanController extends Controller
     public function overdue()
     {
         $overdue = Installment::with(['loan.applicant'])
-            ->where('status', 'pending')
+            ->whereIn('status', ['pending', 'partial'])
             ->where('due_date', '<', now())
             ->orderBy('due_date')
             ->paginate(15);
