@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\DonationController;
 use App\Http\Controllers\Api\ExpenseController;
+use App\Http\Controllers\Api\DocumentUploadController;
 
 // ── Public routes ─────────────────────────────────────────────────────────────
 Route::post('/staff/login', [AuthController::class, 'login']);
@@ -26,6 +27,7 @@ Route::post('/programs', [ProgramController::class, 'store']);
 Route::put('/programs/{slug}', [ProgramController::class, 'update']);
 Route::post('/applications', [ApplicationController::class, 'store']);
 Route::get('/applications/track', [ApplicationController::class, 'track']);
+Route::post('/documents/upload', [DocumentUploadController::class, 'upload']);
 
 // ── Protected routes ──────────────────────────────────────────────────────────
 Route::middleware('auth:sanctum')->group(function () {

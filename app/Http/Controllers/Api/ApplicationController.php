@@ -81,6 +81,11 @@ class ApplicationController extends Controller
             'submitted_at'     => now(),
         ]);
 
+        // Save document paths if provided
+if ($request->has('documents') && is_array($request->documents)) {
+    $application->update(['documents' => json_encode($request->documents)]);
+}
+
         return response()->json([
             'success'          => true,
             'message'          => 'Application submitted successfully.',
